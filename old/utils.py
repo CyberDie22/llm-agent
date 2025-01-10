@@ -4,7 +4,6 @@ import hashlib
 import pathlib
 import re
 import subprocess
-from idlelib.pyparse import trans
 from typing import Literal, Optional, Union
 
 import httpx

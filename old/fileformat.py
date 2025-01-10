@@ -19,28 +19,62 @@ class ImageFormat(Enum):
 class FormatSettings:
     codec: str
     extension: str
+    params: Dict[str, Union[str, int, float]]
 
 
 FORMAT_CONFIGS = {
     ImageFormat.JPEG: FormatSettings(
         codec="mjpeg",
         extension=".jpg",
+        params={
+            "q:v": "100",       # Maximum quality (1-100)
+            "qmin": "1",        # Force minimum quantization
+            "qmax": "1",        # Force maximum quantization
+            "compression_level": "9",  # Maximum compression effort
+            "huffman": "1",     # Use optimized Huffman tables
+            "psnr": "1"         # Enable PSNR computation
+        }
     ),
     ImageFormat.JXL: FormatSettings(
         codec="libjxl",
         extension=".jxl",
+        params={
+            "distance": "0",     # Lossless mode
+            "effort": "9",       # Maximum encoding effort
+            "modular": "1"       # Force modular mode for true lossless
+        }
     ),
     ImageFormat.PNG: FormatSettings(
         codec="png",
         extension=".png",
+        params={
+            "compression_level": "9",  # Maximum compression
+            "pred": "all"             # Use all prediction methods
+        }
     ),
     ImageFormat.WEBP: FormatSettings(
         codec="libwebp",
         extension=".webp",
+        params={
+            "lossless": "1",          # Enable lossless mode
+            "preprocessing": "4",      # Maximum preprocessing
+            "compression_level": "6",  # Maximum compression (0-6)
+            "quality": "100",         # Maximum quality for compression
+        }
     ),
     ImageFormat.AVIF: FormatSettings(
         codec="libaom-av1",
         extension=".avif",
+        params={
+            "crf": "0",           # Lossless mode
+            "cpu-used": "0",      # Slowest/best quality
+            "usage": "allintra",  # Still image mode
+            "row-mt": "1",        # Enable row-based multithreading
+            "tile-columns": "0",  # Disable tiling for better quality
+            "tile-rows": "0",     # Disable tiling for better quality
+            "enable-chroma-deltaq": "1", # Enable delta quantization
+            "aq-mode": "0"        # Disable adaptive quantization for lossless
+        }
     )
 }
 
@@ -76,7 +110,7 @@ def transcode_image(
     format_config = FORMAT_CONFIGS[output_format]
 
     # Merge custom parameters with defaults
-    params = {}
+    params = format_config.params.copy()
     if custom_params:
         params.update(custom_params)
 
@@ -101,18 +135,17 @@ def transcode_image(
 
     try:
         # Build ffmpeg command
-        cmd = ['ffmpeg', '-y', '-i', input_path]
+        cmd = ['ffmpeg', '-i', input_path]
 
         # Add codec
-        # cmd.extend(['-c:v', format_config.codec])
+        cmd.extend(['-c:v', format_config.codec])
 
         # Add format-specific parameters
-        # for key, value in params.items():
-        #     cmd.extend([f'-{key}', str(value)])
+        for key, value in params.items():
+            cmd.extend([f'-{key}', str(value)])
 
         # Add output path
         cmd.append(output_path)
-        print(' '.join(cmd))
 
         # Run ffmpeg
         result = subprocess.run(

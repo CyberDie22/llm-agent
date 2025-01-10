@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
-user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
 def get_page_source(url, timeout=30):
     """
@@ -21,7 +21,10 @@ def get_page_source(url, timeout=30):
     Returns:
         str: HTML source of the page
     """
-    print(f"Fetching page source for {url}")
+    safe_url = urllib.parse.quote(url, safe='')
+    cache_path = pathlib.Path(f"webpage-cache/{safe_url}.html")
+    if cache_path.exists():
+        return cache_path.read_text()
 
     try:
         # Initialize the driver
@@ -30,7 +33,7 @@ def get_page_source(url, timeout=30):
         options.page_load_strategy = 'eager'
         options.add_argument(f"--user-agent={user_agent}")
 
-        driver = uc.Chrome(options=options, use_subprocess=True, no_sandbox=True)
+        driver = uc.Chrome(options=options, use_subprocess=False, no_sandbox=True)
 
         # Set page load timeout
         driver.set_page_load_timeout(timeout)
@@ -47,10 +50,13 @@ def get_page_source(url, timeout=30):
             print(f"Timeout waiting for page load after {timeout} seconds")
 
         # Add a small delay to ensure dynamic content loads
-        time.sleep(5)
+        time.sleep(2)
 
         # Get the page source
-        page_source = driver.execute_script("return document.documentElement.outerHTML;")
+        page_source = driver.page_source
+
+        # Cache the page source
+        cache_path.write_text(page_source)
 
         return page_source
 

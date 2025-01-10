@@ -6,6 +6,7 @@ from openai.types.chat.chat_completion_chunk import Choice
 
 from messagetypes import Message, UserMessage, AssistantMessage, ToolCall
 
+openrouter_api_key = "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"
 openrouter_client = openai.Client(
     # base_url="https://openrouter.helicone.ai/api/v1",
     base_url="https://openrouter.ai/api/v1",
